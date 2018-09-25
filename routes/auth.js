@@ -1,72 +1,8 @@
 var express = require('express');
 const passport = require('passport')
-    , LocalStrategy = require('passport-local').Strategy; // Passport Local
-const session = require('express-session'); // Session
-const MySQLStore = require('express-mysql-session')(session); // MySQL Store
-
-var mysql = require('mysql2');
-var con = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '1111',
-    database: 'imusic'
-});
-con.connect(err => {
-    if (err) {
-        console.error('error connecting: ' + err.stack);
-        return;
-    }
-    console.log('connected as id ' + con.threadId);
-}); // SQL 접속
+const fs = require('fs');
 
 var router = express.Router();
-
-router.use(session({
-    secret: 'Andy0414',
-    resave: false,
-    saveUninitialized: true,
-    store: new MySQLStore({
-        host: 'localhost',
-        port: 3306,
-        user: 'root',
-        password: '1111',
-        database: 'imusic'
-    })
-})) // 세션 스토리지
-router.use(passport.initialize()); // 패스포트 사용
-router.use(passport.session()); // 패스포트 세션 사용
-
-passport.use(new LocalStrategy(
-    (username, password, done) => {
-        var sql = "SELECT id,password FROM userData WHERE id=?"
-        con.query(sql, username, (err, result, fields) => {
-            if (!result[0]) {
-                console.log("[FAIL LOGIN] ID");
-                done(null,false)
-            }
-            else {
-                if (result[0].password == password) {
-                    console.log(`[LOGIN USER]\nID : ${username}`);
-                    done(null,{
-                        username : username
-                    })
-                }
-                else {
-                    console.log("[FAIL LOGIN] PW");
-                    done(null,false)
-                }
-            }
-        })
-    }
-)); // 로그인 조건 - local
-
-passport.serializeUser(function (user, done) {
-    done(null, user);
-}); // 세션 생성
-
-passport.deserializeUser(function (user, done) {
-    done(null, user);
-}); // 세션 확인
 
 router.post('/login',
     passport.authenticate('local'),
@@ -82,7 +18,7 @@ router.post('/register', function (req, res, next) {
     var pw = req.body.password; // 유저 패스워드
     var email = req.body.email; // 유저 이메일
     if (!id || !pw || !email) {
-        
+
         console.log("[NOT DATA]")
         res.status(405).end() // 데이터가 없을 시 405
     }
@@ -122,4 +58,65 @@ router.post('/token', function (req, res, next) {
         res.status(404);
     }
 }); // 로그인 확인
+
+router.post('/list', function (req, res, next) {
+    if (req.user) {
+        fs.readFile('data/' + userId + '.json', (err, data) => {
+            if (err) { res.status(404).end() }
+            res.send(JSON.parse(data))
+        })
+    }
+    else {
+        res.status(404);
+    }
+});
+router.get('/list/create/:id', function (req, res, next) { // 짜야함
+    if (req.user) {
+        var userId = req.user.username
+        var y_id = req.params.id
+        fs.readFile('data/' + userId + '.json', (err, data) => {
+            if (err) { res.status(404).end() }
+            var parseData = JSON.parse(data)
+            var index = parseData.indexOf(y_id)
+            if(index == -1)
+            {
+                parseData.push(y_id)
+                fs.writeFile('data/' + userId + '.json', JSON.stringify(parseData), (err) => {
+                    if (err) { console.log(err) }
+                    res.status(200).end()
+                })
+            }
+            else{
+                res.status(200).end()
+            }
+        })
+    }
+    else {
+        res.status(404);
+    }
+});
+router.get('/list/delete/:id', function (req, res, next) { // 짜야함
+    if (req.user) {
+        var userId = req.user.username
+        var y_id = req.params.id
+        fs.readFile('data/' + userId + '.json', (err, data) => {
+            if (err) { res.status(404).end() }
+            var parseData = JSON.parse(data)
+            var index = parseData.indexOf(y_id)
+            if (index != -1) {
+                parseData.splice(index,1)
+                fs.writeFile('data/' + userId + '.json', JSON.stringify(parseData), (err) => {
+                    if (err) { console.log(err) }
+                    res.status(200).end()
+                })
+            }
+            else {
+                res.status(200).end()
+            }
+        })
+    }
+    else {
+        res.status(404);
+    }
+});
 module.exports = router;
