@@ -1,8 +1,29 @@
 var express = require('express');
 const passport = require('passport')
+var cookieParser = require('cookie-parser');
 const fs = require('fs');
 
 var router = express.Router();
+
+var mysql = require('mysql2');
+var con = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '1111',
+    database: 'imusic'
+});
+con.connect(err => {
+    if (err) {
+        console.error('error connecting: ' + err.stack);
+        return;
+    }
+    console.log('connected as id ' + con.threadId);
+}); // SQL 접속
+
+
+router.use(express.json()); // body parser
+router.use(express.urlencoded({ extended: false })); // body parser
+router.use(cookieParser()); // 쿠키파서
 
 router.post('/login',
     passport.authenticate('local'),
@@ -18,17 +39,18 @@ router.post('/register', function (req, res, next) {
     var pw = req.body.password; // 유저 패스워드
     var email = req.body.email; // 유저 이메일
     if (!id || !pw || !email) {
-
+        console.log(id,pw,email)
         console.log("[NOT DATA]")
         res.status(405).end() // 데이터가 없을 시 405
     }
     else {
+        console.log(id, pw, email)
         var sql = "SELECT id FROM userData WHERE id=?";
         con.query(sql, [id], (err, result, fields) => {
             if (err) {
                 res.status(505).end(); // 에러 시 505
             }
-            if (!result[0]) {
+            if (result.length == 0) {
                 var sql = "INSERT INTO userData (id, password, email) VALUES(?,?,?)";
                 con.query(sql, [id, pw, email], (err, result, fields) => {
                     if (err) {
