@@ -67,7 +67,7 @@ passport.use(new LocalStrategy(
                 if (result[0].password == password) {
                     console.log(`[LOGIN USER]\nID : ${username}`);
                     var userId = username
-                    fs.readdir('public/userMusicList/', (err, files) => {
+                    fs.readdir('data/', (err, files) => {
                         if (files.indexOf(userId + ".json") == -1) {
                             fs.writeFile('data/' + userId + '.json', '[]', (err) => {
                                 if (err) { console.log(err) }
