@@ -3,7 +3,7 @@ var search = require('youtube-search');
 var fs = require('fs');
 
 var opts = {
-    maxResults: 8,
+    maxResults: 20,
     key: 'AIzaSyBFbhj76YtmD3_S0r_h6ntyvJNqn9QCLxQ'
 };
 
